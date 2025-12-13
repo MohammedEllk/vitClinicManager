@@ -1,0 +1,15 @@
+import { useContext } from "react";
+import { Navigate } from "react-router-dom";
+import { AuthContext } from "../context/authContext/";
+
+export default function AdminRoute({ children }) {
+  const { user, loading } = useContext(AuthContext);
+
+  if (loading) return null; // ou un loader
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  if (user.role !== "admin") return <Navigate to="/dashboard" replace />;
+
+  return children;
+}
