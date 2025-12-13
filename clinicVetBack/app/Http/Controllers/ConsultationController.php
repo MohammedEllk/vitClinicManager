@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Consultation;
+use App\Models\Animal;
 use Illuminate\Http\Request;
+
 
 class ConsultationController extends Controller
 {
@@ -30,6 +32,16 @@ class ConsultationController extends Controller
         $consultation = Consultation::create($data);
 
         return response()->json($consultation, 201);
+    }
+
+    
+
+    public function historyByAnimal(Animal $animal)
+    {
+        return $animal->consultations()
+            ->with('veterinaire')
+            ->orderByDesc('date_consultation')
+            ->get();
     }
 
     public function show(Consultation $consultation)

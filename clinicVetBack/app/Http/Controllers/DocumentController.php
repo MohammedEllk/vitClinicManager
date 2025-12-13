@@ -7,6 +7,8 @@ use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
+
+
 class DocumentController extends Controller
 {
     public function index(Consultation $consultation)
@@ -63,6 +65,15 @@ class DocumentController extends Controller
         $document->url = Storage::disk('public')->url($document->chemin);
 
         return $document;
+    }
+
+    public function download(Document $document)
+    {
+        if (!Storage::disk('public')->exists($document->chemin)) {
+            return response()->json(['message' => 'Fichier introuvable'], 404);
+        }
+
+        return Storage::disk('public')->download($document->chemin, $document->nom_original);
     }
 
     public function destroy(Document $document)
