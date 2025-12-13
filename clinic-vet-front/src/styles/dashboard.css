@@ -15,7 +15,7 @@
 /* cartes de stats */
 .dash-cards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* ✅ 4 cartes */
   gap: 24px;
 }
 
@@ -27,6 +27,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-height: 110px; /* ✅ donne le même rendu */
 }
 
 .dash-card-label {
@@ -45,3 +46,100 @@
   font-size: 13px;
   color: #777;
 }
+
+/* ✅ responsive */
+@media (max-width: 1200px) {
+  .dash-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .dash-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ✅ AGENDA */
+.agenda-card {
+  margin-top: 24px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px 18px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+}
+
+.agenda-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.agenda-title {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.agenda-range {
+  font-size: 12px;
+  color: #666;
+}
+
+.agenda-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.agenda-day {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fafafa;
+}
+
+.agenda-day-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.agenda-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agenda-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+
+.agenda-time {
+  min-width: 44px;
+  font-weight: 700;
+}
+
+.agenda-text {
+  color: #333;
+}
+
+.agenda-empty,
+.agenda-empty-line {
+  font-size: 12px;
+  color: #777;
+}
+
+@media (max-width: 900px) {
+  .agenda-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

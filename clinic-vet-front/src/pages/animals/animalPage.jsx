@@ -1,12 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
 import MainLayout from "../../layout/mainLayout";
-import "../../styles/ownersAnimals.css";
 import Modal from "../../components/modals";
+
 import { animauxApi } from "../../services/animauxApi";
 import { proprietairesApi } from "../../services/proprietairesApi";
+
+import "../../styles/ownersAnimals.css";
 import "../../styles/animaux.css";
 
 const PAGE_SIZE = 6;
+
+// ✅ normalize laravel responses (plain array OR paginate() OR wrapped)
+function toArray(payload) {
+  if (!payload) return [];
+
+  // already array
+  if (Array.isArray(payload)) return payload;
+
+  // axios response { data: ... }
+  if (payload?.data && !Array.isArray(payload) && typeof payload === "object") {
+    // case: { data: [...] }
+    if (Array.isArray(payload.data)) return payload.data;
+
+    // case: paginate() => { data: { data: [...] } } or { data: { data, current_page... } }
+    if (payload.data?.data && Array.isArray(payload.data.data)) return payload.data.data;
+
+    // case: paginate() => { data: [...] , current_page... }
+    if (payload?.data && Array.isArray(payload.data)) return payload.data;
+  }
+
+  // case: paginate() => { data: [...] , current_page... }
+  if (payload?.data && Array.isArray(payload.data)) return payload.data;
+
+  return [];
+}
 
 export default function AnimalsPage() {
   const [items, setItems] = useState([]);
@@ -32,28 +59,50 @@ export default function AnimalsPage() {
 
   async function load() {
     setLoading(true);
+    setError("");
     try {
-      const [animals, props] = await Promise.all([
+      const [animalsRes, ownersRes] = await Promise.all([
         animauxApi.list(q),
-        proprietairesApi.list(),
+        proprietairesApi.list(), // peut être paginé !
       ]);
+
+      const animals = toArray(animalsRes);
+      const props = toArray(ownersRes);
+
       setItems(animals);
       setOwners(props);
       setPage(1);
+    } catch (e) {
+      setItems([]);
+      setOwners([]);
+      setError(e?.response?.data?.message || "Erreur chargement animaux/propriétaires");
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const totalPages = useMemo(() => Math.max(1, Math.ceil(items.length / PAGE_SIZE)), [items]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(items.length / PAGE_SIZE)),
+    [items]
+  );
+
   const pageItems = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return items.slice(start, start + PAGE_SIZE);
   }, [items, page]);
 
   function openCreate() {
+    const ownersArr = Array.isArray(owners) ? owners : [];
+    if (ownersArr.length === 0) {
+      setError("Ajoute d'abord un propriétaire avant de créer un animal.");
+      return;
+    }
+
     setEditing(null);
     setError("");
     setForm({
@@ -62,7 +111,7 @@ export default function AnimalsPage() {
       race: "",
       sexe: "",
       date_naissance: "",
-      proprietaire_id: owners[0]?.id || "",
+      proprietaire_id: ownersArr[0]?.id || "",
     });
     setOpen(true);
   }
@@ -75,7 +124,7 @@ export default function AnimalsPage() {
       espece: animal.espece || "",
       race: animal.race || "",
       sexe: animal.sexe || "",
-      date_naissance: animal.date_naissance ? animal.date_naissance.slice(0, 10) : "",
+      date_naissance: animal.date_naissance ? String(animal.date_naissance).slice(0, 10) : "",
       proprietaire_id: animal.proprietaire_id || animal.proprietaire?.id || "",
     });
     setOpen(true);
@@ -98,21 +147,31 @@ export default function AnimalsPage() {
       close();
       load();
     } catch (err) {
-      const errors = err.response?.data?.errors;
+      const errors = err?.response?.data?.errors;
       if (errors) {
         const firstKey = Object.keys(errors)[0];
-        setError(errors[firstKey][0]);
+        setError(errors[firstKey]?.[0] || "Erreur validation");
       } else {
-        setError(err.response?.data?.message || "Erreur");
+        setError(err?.response?.data?.message || "Erreur");
       }
     }
   }
 
   async function remove(animal) {
     if (!confirm(`Supprimer ${animal.nom} ?`)) return;
-    await animauxApi.remove(animal.id);
-    load();
+    try {
+      await animauxApi.remove(animal.id);
+      // si on supprime le dernier élément d'une page, on recule d'une page si besoin
+      const newItemsCount = items.length - 1;
+      const newTotalPages = Math.max(1, Math.ceil(newItemsCount / PAGE_SIZE));
+      if (page > newTotalPages) setPage(newTotalPages);
+      load();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Erreur suppression");
+    }
   }
+
+  const ownersArr = Array.isArray(owners) ? owners : [];
 
   return (
     <MainLayout>
@@ -127,45 +186,79 @@ export default function AnimalsPage() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <button className="btn" onClick={load}>Rechercher</button>
-          <button className="btn btn-green" onClick={openCreate}>Ajouter animaux</button>
+          <button className="btn" onClick={() => load()}>
+            Rechercher
+          </button>
+          <button className="btn btn-green" onClick={openCreate}>
+            Ajouter animaux
+          </button>
         </div>
       </div>
 
+      {error && <div className="page-error">{error}</div>}
       {loading && <p>Chargement...</p>}
+
+      {!loading && pageItems.length === 0 && (
+        <p style={{ marginTop: 16 }}>Aucun animal.</p>
+      )}
 
       <div className="cards-grid">
         {pageItems.map((a) => (
           <div key={a.id} className="animal-card">
             <div className="animal-name">{a.nom}</div>
+
             <div className="animal-sub">
-              {a.espece}{a.race ? `, ${a.race}` : ""}{a.sexe ? `, ${a.sexe}` : ""}
+              {a.espece}
+              {a.race ? `, ${a.race}` : ""}
+              {a.sexe ? `, ${a.sexe}` : ""}
             </div>
+
             <div className="animal-owner">
-              Propriétaire: <b>{a.proprietaire ? `${a.proprietaire.nom}` : "-"}</b>
+              Propriétaire:{" "}
+              <b>{a.proprietaire ? `${a.proprietaire.nom}` : "-"}</b>
             </div>
 
             <div className="card-actions">
-              <button className="btn btn-purple" onClick={() => openEdit(a)}>modifier</button>
-              <button className="btn btn-danger" onClick={() => remove(a)}>supprimer</button>
+              <button className="btn btn-purple" onClick={() => openEdit(a)}>
+                modifier
+              </button>
+              <button className="btn btn-danger" onClick={() => remove(a)}>
+                supprimer
+              </button>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="pagination">
-        <button className="page-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
-        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      {totalPages > 1 && (
+        <div className="pagination">
           <button
-            key={p}
-            className={`page-btn ${p === page ? "active" : ""}`}
-            onClick={() => setPage(p)}
+            className="page-btn"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
           >
-            {p}
+            ‹
           </button>
-        ))}
-        <button className="page-btn" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>›</button>
-      </div>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              className={`page-btn ${p === page ? "active" : ""}`}
+              onClick={() => setPage(p)}
+            >
+              {p}
+            </button>
+          ))}
+
+          <button
+            className="page-btn"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            ›
+          </button>
+        </div>
+      )}
 
       <Modal
         open={open}
@@ -179,12 +272,14 @@ export default function AnimalsPage() {
             onChange={(e) => setForm({ ...form, nom: e.target.value })}
             required
           />
+
           <input
             placeholder="Espèce * (Chat, Chien...)"
             value={form.espece}
             onChange={(e) => setForm({ ...form, espece: e.target.value })}
             required
           />
+
           <input
             placeholder="Race"
             value={form.race}
@@ -209,8 +304,12 @@ export default function AnimalsPage() {
             onChange={(e) => setForm({ ...form, proprietaire_id: e.target.value })}
             required
           >
-            <option value="" disabled>Choisir propriétaire</option>
-            {owners.map((o) => (
+            <option value="" disabled>
+              Choisir propriétaire
+            </option>
+
+            {/* ✅ ownersArr est toujours un tableau */}
+            {ownersArr.map((o) => (
               <option key={o.id} value={o.id}>
                 {o.nom} {o.prenom || ""} ({o.telephone || "tel?"})
               </option>
@@ -220,8 +319,12 @@ export default function AnimalsPage() {
           {error && <p className="error">{error}</p>}
 
           <div className="modal-actions">
-            <button type="button" className="btn" onClick={close}>Annuler</button>
-            <button type="submit" className="btn btn-green">{editing ? "Enregistrer" : "Créer"}</button>
+            <button type="button" className="btn" onClick={close}>
+              Annuler
+            </button>
+            <button type="submit" className="btn btn-green">
+              {editing ? "Enregistrer" : "Créer"}
+            </button>
           </div>
         </form>
       </Modal>

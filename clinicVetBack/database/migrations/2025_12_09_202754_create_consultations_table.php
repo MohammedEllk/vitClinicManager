@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             $table->foreignId('animal_id')
-                  ->constrained('animaux')
+                  ->constrained('animals')
                   ->onDelete('cascade');
 
             $table->foreignId('veterinaire_id')

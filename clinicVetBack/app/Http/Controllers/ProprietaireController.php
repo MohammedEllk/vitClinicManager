@@ -7,55 +7,68 @@ use Illuminate\Http\Request;
 
 class ProprietaireController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Tu peux ajouter pagination plus tard
-        return Proprietaire::withCount('animaux')
-            ->orderBy('nom')
-            ->get();
-    }
+        $q = $request->query('q');
+        $perPage = (int) $request->query('per_page', 8); // 8 cards par page
+        $perPage = max(1, min($perPage, 50)); // sécurité
 
+        $query = Proprietaire::query()->orderBy('nom');
+
+        if ($q) {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('nom', 'ilike', "%$q%")
+                    ->orWhere('telephone', 'ilike', "%$q%");
+            });
+        }
+
+        // retourne: data, current_page, last_page, total, etc.
+        return $query->paginate($perPage);
+    }
     public function store(Request $request)
     {
         $data = $request->validate([
-            'nom'       => 'required|string|max:255',
-            'prenom'    => 'nullable|string|max:255',
-            'telephone' => 'nullable|string|max:50',
-            'email'     => 'nullable|email|max:255',
-            'adresse'   => 'nullable|string',
+            'nom' => ['required','string','max:255'],
+            'telephone' => ['nullable','string','max:50'],
+            'email' => ['nullable','email','max:255'],
+            'adresse' => ['nullable','string','max:255'],
         ]);
 
-        $proprietaire = Proprietaire::create($data);
-
-        return response()->json($proprietaire, 201);
-    }
-
-    public function show(Proprietaire $proprietaire)
-    {
-        // Charger les animaux du propriétaire si besoin
-        $proprietaire->load('animaux');
-        return $proprietaire;
+        return Proprietaire::create($data);
     }
 
     public function update(Request $request, Proprietaire $proprietaire)
     {
         $data = $request->validate([
-            'nom'       => 'sometimes|required|string|max:255',
-            'prenom'    => 'nullable|string|max:255',
-            'telephone' => 'nullable|string|max:50',
-            'email'     => 'nullable|email|max:255',
-            'adresse'   => 'nullable|string',
+            'nom' => ['required','string','max:255'],
+            'telephone' => ['nullable','string','max:50'],
+            'email' => ['nullable','email','max:255'],
+            'adresse' => ['nullable','string','max:255'],
         ]);
 
         $proprietaire->update($data);
 
-        return $proprietaire;
+        return $proprietaire->fresh();
     }
 
     public function destroy(Proprietaire $proprietaire)
     {
-        $proprietaire->delete();
+        // Si tu veux empêcher suppression si il a des animaux:
+        // if ($proprietaire->animaux()->exists()) {
+        //   return response()->json(['message' => 'Impossible de supprimer : propriétaire possède des animaux.'], 422);
+        // }
 
-        return response()->noContent();
+        $proprietaire->delete();
+        return response()->json(['message' => 'Propriétaire supprimé']);
+    }
+
+    public function details(Proprietaire $proprietaire)
+    {
+        // suppose relation Proprietaire->animaux()
+        $proprietaire->load(['animaux' => function ($q) {
+            $q->orderBy('nom');
+        }]);
+
+        return $proprietaire;
     }
 }

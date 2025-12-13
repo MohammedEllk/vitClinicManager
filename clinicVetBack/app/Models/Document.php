@@ -19,18 +19,8 @@ class Document extends Model
         'description',
     ];
 
-    protected $casts = [
-        'taille' => 'integer',
-    ];
-
     public function consultation()
     {
         return $this->belongsTo(Consultation::class);
-    }
-
-    // URL d'accès direct au fichier (via storage/public)
-    public function getUrlAttribute()
-    {
-        return \Storage::disk('public')->url($this->chemin);
     }
 }

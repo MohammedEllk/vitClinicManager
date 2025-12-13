@@ -9,6 +9,10 @@ use App\Http\Controllers\ProprietaireController;
 use App\Http\Controllers\AnimalController;
 use App\Http\Controllers\ConsultationController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DashboardController;
+
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -50,6 +54,8 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::apiResource('proprietaires', ProprietaireController::class);
+    Route::get('/proprietaires/{proprietaire}/details', [ProprietaireController::class, 'details']);
+
 
     /*
     |--------------------------------------------------------------------------
@@ -82,4 +88,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // supprimer document
     Route::delete('/documents/{document}', [DocumentController::class, 'destroy']);
+    Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+    Route::get('/dashboard/agenda-week', [DashboardController::class, 'agendaWeek']);
 });

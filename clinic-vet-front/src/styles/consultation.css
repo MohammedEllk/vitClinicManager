@@ -1,0 +1,159 @@
+.consult-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.toolbar select {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  min-width: 320px;
+}
+
+.search {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  min-width: 320px;
+}
+
+.btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #cfcfcf;
+  cursor: pointer;
+  background: #fff;
+}
+
+.btn-green { background: #1f7a57; color: #fff; border: none; }
+.btn-purple { background: #7b74e6; color: #fff; border: none; }
+.btn-danger { background: #d9534f; color: #fff; border: none; }
+
+.consult-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.consult-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.date {
+  font-weight: 800;
+}
+
+.animal {
+  color: #444;
+  font-weight: 700;
+}
+
+.line {
+  margin: 6px 0;
+  color: #333;
+}
+
+.metrics {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+  color: #444;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-form input,
+.modal-form select,
+.modal-form textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.modal-form textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.row {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.error {
+  color: red;
+  margin: 0;
+}
+
+.consultation-actions {
+  display: flex;
+  gap: 10px;              /* espace entre les boutons */
+  margin-top: 12px;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+/* Style commun */
+.consultation-actions button {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  min-width: 90px;
+}
+
+/* Bouton documents */
+.btn-doc {
+  background: #e0e0e0;
+  color: #333;
+}
+
+/* Modifier */
+.btn-edit {
+  background: #7b6ee6;
+  color: white;
+}
+
+/* Supprimer */
+.btn-delete {
+  background: #d9534f;
+  color: white;
+}

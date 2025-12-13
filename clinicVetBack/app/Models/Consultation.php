@@ -16,6 +16,8 @@ class Consultation extends Model
         'motif',
         'diagnostic',
         'traitement',
+        'poids',
+        'temperature',
         'recommandations',
     ];
 

@@ -2,89 +2,74 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Consultation;
 use App\Models\Document;
+use App\Models\Consultation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-
-
 class DocumentController extends Controller
 {
+    /**
+     * Liste des documents d’une consultation
+     */
     public function index(Consultation $consultation)
     {
-        // On ajoute l'URL public générée à la volée
-        return $consultation->documents->map(function ($doc) {
-            $doc->url = Storage::disk('public')->url($doc->chemin);
-            return $doc;
-        });
+        return response()->json(
+            $consultation->documents()->latest()->get()
+        );
     }
 
+    /**
+     * Upload document
+     */
     public function store(Request $request, Consultation $consultation)
     {
-        $data = $request->validate([
-            'file'          => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5 Mo
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'type_document' => 'nullable|string|max:100',
-            'description'   => 'nullable|string',
+            'description' => 'nullable|string',
         ]);
 
         $file = $request->file('file');
 
-        $path = $file->store("consultations/{$consultation->id}", 'public');
+        // Stockage
+        $path = $file->store(
+            "consultations/{$consultation->id}",
+            'public'
+        );
 
-        $document = $consultation->documents()->create([
-            'nom_original' => $file->getClientOriginalName(),
-            'chemin'       => $path,
-            'type_mime'    => $file->getClientMimeType(),
-            'taille'       => $file->getSize(),
-            'type_document'=> $data['type_document'] ?? null,
-            'description'  => $data['description'] ?? null,
+        $document = Document::create([
+            'consultation_id' => $consultation->id,
+            'nom_original'    => $file->getClientOriginalName(),
+            'chemin'          => $path,
+            'type_mime'       => $file->getMimeType(),
+            'taille'          => $file->getSize(),
+            'type_document'   => $request->type_document,
+            'description'     => $request->description,
         ]);
-
-        // Rajouter l'URL au retour
-        $document->url = Storage::disk('public')->url($document->chemin);
 
         return response()->json($document, 201);
     }
 
-    public function show(Document $document)
-    {
-        $document->url = Storage::disk('public')->url($document->chemin);
-        return $document;
-    }
-
-    public function update(Request $request, Document $document)
-    {
-        $data = $request->validate([
-            'type_document' => 'nullable|string|max:100',
-            'description'   => 'nullable|string',
-        ]);
-
-        $document->update($data);
-
-        $document->url = Storage::disk('public')->url($document->chemin);
-
-        return $document;
-    }
-
+    /**
+     * Télécharger un document
+     */
     public function download(Document $document)
     {
-        if (!Storage::disk('public')->exists($document->chemin)) {
-            return response()->json(['message' => 'Fichier introuvable'], 404);
-        }
-
-        return Storage::disk('public')->download($document->chemin, $document->nom_original);
+        return Storage::disk('public')->download(
+            $document->chemin,
+            $document->nom_original
+        );
     }
 
+    /**
+     * Supprimer document
+     */
     public function destroy(Document $document)
     {
-        // Supprimer le fichier physique
-        if ($document->chemin && Storage::disk('public')->exists($document->chemin)) {
-            Storage::disk('public')->delete($document->chemin);
-        }
-
+        Storage::disk('public')->delete($document->chemin);
         $document->delete();
 
-        return response()->noContent();
+        return response()->json(['message' => 'Document supprimé']);
     }
 }
