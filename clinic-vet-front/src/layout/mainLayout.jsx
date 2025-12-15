@@ -37,7 +37,6 @@ export default function MainLayout({ children }) {
         <button
           className="sidebar-logout"
           onClick={() => {
-            // tu peux appeler ton logout du contexte ici si tu veux
             window.location.href = "/login";
           }}
         >

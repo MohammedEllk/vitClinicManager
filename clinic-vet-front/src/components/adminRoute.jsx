@@ -5,7 +5,7 @@ import { AuthContext } from "../context/authContext/";
 export default function AdminRoute({ children }) {
   const { user, loading } = useContext(AuthContext);
 
-  if (loading) return null; // ou un loader
+  if (loading) return null; 
 
   if (!user) return <Navigate to="/login" replace />;
 

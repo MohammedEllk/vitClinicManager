@@ -62,10 +62,6 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="login-footer">
-            Pas encore de compte ?{" "}
-            <Link to="/register">Créer un compte</Link>
-          </p>
         </div>
       </div>
 
